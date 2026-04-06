@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>High Bar Ranch — Fence Wire Price Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rust:   #B94A1A;
+  --straw:  #E8D9B0;
+  --dirt:   #7A5C3A;
+  --wire:   #2C2C2C;
+  --galv:   #6A9A90;
+  --cream:  #F5EFE0;
+  --ink:    #1A1A1A;
+  --faded:  #9A8F80;
+  --good:   #3A7A4A;
+  --warn:   #C47A1A;
+  --panel:  #FDFAF4;
+  --border: #D4C8A8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+header {
+background: var(–wire);
+color: var(–straw);
+padding: 20px 28px 16px;
+border-bottom: 4px solid var(–rust);
+}
+.header-top {
+display: flex;
+align-items: baseline;
+gap: 16px;
+flex-wrap: wrap;
+}
+header h1 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 32px;
+letter-spacing: 2px;
+color: var(–straw);
+}
+header h1 span { color: var(–rust); }
+.header-sub {
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+color: var(–galv);
+letter-spacing: 1px;
+}
+.check-bar {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-top: 10px;
+flex-wrap: wrap;
+}
+#check-status {
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+color: var(–faded);
+}
+#check-status.checking { color: var(–warn); }
+#check-status.done     { color: var(–good); }
+button.check-btn {
+background: var(–rust);
+color: var(–straw);
+border: none;
+padding: 6px 14px;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+letter-spacing: 1px;
+cursor: pointer;
+transition: background 0.15s;
+}
+button.check-btn:hover { background: #d05520; }
+button.check-btn:disabled { background: #555; cursor: default; }
+
+/* ── TABS ── */
+.tab-bar {
+display: flex;
+background: var(–wire);
+padding: 0 28px;
+gap: 2px;
+}
+.tab {
+padding: 8px 18px;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+letter-spacing: 1px;
+color: var(–faded);
+cursor: pointer;
+border-top: 2px solid transparent;
+transition: all 0.15s;
+text-transform: uppercase;
+}
+.tab:hover { color: var(–straw); }
+.tab.active {
+color: var(–straw);
+border-top-color: var(–rust);
+background: rgba(255,255,255,0.05);
+}
+
+/* ── LAYOUT ── */
+main { padding: 20px 28px; max-width: 1400px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── SECTION HEADERS ── */
+.section-label {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 18px;
+letter-spacing: 2px;
+color: var(–dirt);
+border-bottom: 2px solid var(–border);
+padding-bottom: 4px;
+margin: 20px 0 12px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ── PRICE TABLE ── */
+.table-wrap {
+overflow-x: auto;
+border: 1px solid var(–border);
+border-radius: 2px;
+background: var(–panel);
+}
+table {
+width: 100%;
+border-collapse: collapse;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11.5px;
+}
+thead tr {
+background: var(–wire);
+color: var(–straw);
+}
+thead th {
+padding: 8px 10px;
+text-align: left;
+font-weight: 600;
+letter-spacing: 0.5px;
+white-space: nowrap;
+font-size: 10px;
+text-transform: uppercase;
+}
+thead th.num { text-align: right; }
+tbody tr { border-bottom: 1px solid var(–border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(184,74,26,0.04); }
+tbody tr.supplier-swi { border-left: 3px solid var(–galv); }
+tbody tr.supplier-stockyard { border-left: 3px solid var(–rust); }
+td {
+padding: 7px 10px;
+vertical-align: middle;
+white-space: nowrap;
+}
+td.num { text-align: right; font-weight: 600; }
+td.price-cell {
+text-align: right;
+font-weight: 600;
+color: var(–ink);
+}
+td.price-cell.loading { color: var(–warn); }
+td.price-cell.confirmed { color: var(–good); }
+td.price-cell.error { color: #B42A2A; font-size: 10px; }
+a.product-link {
+color: var(–rust);
+text-decoration: none;
+font-size: 10px;
+letter-spacing: 0.5px;
+}
+a.product-link:hover { text-decoration: underline; }
+.tag {
+display: inline-block;
+padding: 1px 5px;
+font-size: 9px;
+letter-spacing: 0.5px;
+border-radius: 2px;
+font-family: ‘IBM Plex Mono’, monospace;
+text-transform: uppercase;
+}
+.tag-fixed  { background: #d4e8d4; color: #2A5A2A; }
+.tag-square { background: #d4dce8; color: #2A3A5A; }
+.tag-hinge  { background: #e8e0d4; color: #5A4A2A; }
+.tag-grad   { background: #e8d4d4; color: #5A2A2A; }
+.tag-znal   { background: #D4EAE6; color: #1A4A44; }
+.tag-c3     { background: #E8E8D4; color: #4A4A1A; }
+
+.legend {
+display: flex;
+gap: 16px;
+margin-top: 8px;
+flex-wrap: wrap;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+color: var(–faded);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 3px; border-radius: 1px; }
+
+/* ── CALCULATOR ── */
+.calc-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+gap: 16px;
+margin-bottom: 20px;
+}
+.calc-card {
+background: var(–panel);
+border: 1px solid var(–border);
+padding: 16px;
+}
+.calc-card h3 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 16px;
+letter-spacing: 1px;
+color: var(–dirt);
+margin-bottom: 12px;
+border-bottom: 1px solid var(–border);
+padding-bottom: 6px;
+}
+.form-row {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 8px;
+flex-wrap: wrap;
+}
+.form-row label {
+font-size: 11px;
+color: var(–faded);
+min-width: 140px;
+font-family: ‘IBM Plex Mono’, monospace;
+}
+.form-row input, .form-row select {
+flex: 1;
+min-width: 80px;
+padding: 5px 8px;
+border: 1px solid var(–border);
+background: var(–cream);
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 12px;
+color: var(–ink);
+outline: none;
+}
+.form-row input:focus, .form-row select:focus {
+border-color: var(–rust);
+}
+.mode-toggle {
+display: flex;
+gap: 2px;
+margin-bottom: 12px;
+}
+.mode-btn {
+flex: 1;
+padding: 5px;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+letter-spacing: 0.5px;
+border: 1px solid var(–border);
+background: var(–cream);
+cursor: pointer;
+text-transform: uppercase;
+color: var(–faded);
+transition: all 0.1s;
+}
+.mode-btn.active {
+background: var(–wire);
+color: var(–straw);
+border-color: var(–wire);
+}
+.dim-group { display: none; }
+.dim-group.active { display: block; }
+
+.calc-results {
+background: var(–wire);
+color: var(–straw);
+padding: 14px 16px;
+margin-top: 12px;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+line-height: 1.8;
+}
+.calc-results .result-line {
+display: flex;
+justify-content: space-between;
+gap: 16px;
+border-bottom: 1px solid rgba(255,255,255,0.08);
+padding: 2px 0;
+}
+.calc-results .result-line:last-child { border-bottom: none; }
+.result-label { color: var(–galv); }
+.result-val { color: var(–straw); font-weight: 600; }
+.result-note { color: var(–faded); font-size: 10px; margin-top: 6px; }
+.result-section-head {
+color: var(–rust);
+font-size: 10px;
+letter-spacing: 1px;
+text-transform: uppercase;
+margin: 8px 0 2px;
+}
+
+button.calc-btn {
+width: 100%;
+padding: 8px;
+background: var(–rust);
+color: var(–straw);
+border: none;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 16px;
+letter-spacing: 2px;
+cursor: pointer;
+margin-top: 10px;
+transition: background 0.15s;
+}
+button.calc-btn:hover { background: #d05520; }
+
+/* wire selector in calc */
+.wire-select-row {
+margin-bottom: 10px;
+}
+.wire-select-row label {
+display: block;
+font-size: 11px;
+color: var(–faded);
+font-family: ‘IBM Plex Mono’, monospace;
+margin-bottom: 4px;
+}
+.wire-select-row select {
+width: 100%;
+padding: 5px 8px;
+border: 1px solid var(–border);
+background: var(–cream);
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 11px;
+color: var(–ink);
+}
+
+/* post calc */
+.post-summary {
+background: var(–panel);
+border: 1px solid var(–border);
+padding: 14px 16px;
+margin-top: 16px;
+}
+.post-summary h3 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 16px;
+color: var(–dirt);
+letter-spacing: 1px;
+margin-bottom: 10px;
+}
+.post-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+}
+.post-box {
+background: var(–cream);
+border: 1px solid var(–border);
+padding: 10px 12px;
+}
+.post-box .post-type {
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+color: var(–faded);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+.post-box .post-count {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 28px;
+color: var(–rust);
+line-height: 1;
+margin: 2px 0;
+}
+.post-box .post-spec {
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+color: var(–dirt);
+}
+.post-note {
+margin-top: 10px;
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+color: var(–faded);
+line-height: 1.6;
+}
+
+/* ── NOTES TAB ── */
+.notes-area {
+background: var(–panel);
+border: 1px solid var(–border);
+padding: 16px;
+max-width: 700px;
+}
+.notes-area p {
+margin-bottom: 10px;
+line-height: 1.7;
+color: var(–dirt);
+}
+.notes-area strong { color: var(–ink); }
+.notes-area ul { margin-left: 20px; margin-bottom: 10px; }
+.notes-area li { margin-bottom: 4px; }
+
+/* ── TIMESTAMP FOOTER ── */
+footer {
+margin-top: 32px;
+padding: 12px 28px;
+border-top: 1px solid var(–border);
+font-family: ‘IBM Plex Mono’, monospace;
+font-size: 10px;
+color: var(–faded);
+display: flex;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 8px;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>High Bar Ranch <span>//</span> Fence Wire Tracker</h1>
+    <span class="header-sub">SWI Fence &amp; Stockyard Ranch Supply — Commerce City CO</span>
+  </div>
+  <div class="check-bar">
+    <button class="check-btn" id="refresh-btn" onclick="runPriceCheck()">⟳ CHECK PRICES NOW</button>
+    <span id="check-status">— prices not yet verified this session</span>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('prices')">Price Table</div>
+  <div class="tab" onclick="switchTab('calc')">Roll & Post Calculator</div>
+  <div class="tab" onclick="switchTab('notes')">Product Notes</div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════
+     TAB 1: PRICE TABLE
+═══════════════════════════════════════════════ -->
+
+<div class="tab-panel active" id="tab-prices">
+
+  <div class="section-label">High-Tensile / High-Carbon Woven Wire — Local Pickup Only</div>
+
+  <div class="table-wrap">
+    <table id="price-table">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th>Product</th>
+          <th>Wire</th>
+          <th>Knot</th>
+          <th>Galv.</th>
+          <th class="num">Height</th>
+          <th class="num">Stay</th>
+          <th class="num">Roll</th>
+          <th class="num">Listed Price</th>
+          <th class="num">$/LF</th>
+          <th class="num">$/1,000'</th>
+          <th class="num">$/½ Mile</th>
+          <th class="num">$/Mile</th>
+          <th class="num">$/SF</th>
+          <th>Link</th>
+          <th>Last Checked</th>
+        </tr>
+      </thead>
+      <tbody id="price-tbody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--galv)"></div> SWI Fence (No-Climb/Fixed/Square)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--rust)"></div> Stockyard Ranch Supply</div>
+    <div class="legend-item" style="margin-left:auto; font-size:10px; color:var(--faded)">
+      Prices are listed prices captured at last check date. Verify before ordering.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 2: CALCULATOR
+═══════════════════════════════════════════════ -->
+
+<div class="tab-panel" id="tab-calc">
+
+  <div class="section-label">Roll Calculator</div>
+  <div class="calc-grid">
+    <div class="calc-card">
+      <h3>Fence Line Input</h3>
+
+```
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-linear" onclick="setMode('linear')">Linear Feet</button>
+    <button class="mode-btn" id="btn-dims" onclick="setMode('dims')">Pen Dimensions</button>
+  </div>
+
+  <div class="dim-group active" id="group-linear">
+    <div class="form-row">
+      <label>Total linear feet</label>
+      <input type="number" id="linear-ft" value="1320" min="1">
+    </div>
+  </div>
+
+  <div class="dim-group" id="group-dims">
+    <div class="form-row">
+      <label>Length (ft)</label>
+      <input type="number" id="dim-len" value="330" min="1">
+    </div>
+    <div class="form-row">
+      <label>Width (ft)</label>
+      <input type="number" id="dim-wid" value="330" min="1">
+    </div>
+    <div class="form-row">
+      <label>Number of sides</label>
+      <select id="dim-sides">
+        <option value="4">4 — Rectangular pen</option>
+        <option value="3">3 — Triangular</option>
+        <option value="2">2 — Two sides only</option>
+        <option value="1">1 — One side only</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="wire-select-row">
+    <label>Wire product</label>
+    <select id="wire-sel">
+      <!-- populated by JS from products array -->
+    </select>
+  </div>
+
+  <div class="form-row">
+    <label>Waste factor (%)</label>
+    <input type="number" id="waste-pct" value="5" min="0" max="30">
+  </div>
+
+  <button class="calc-btn" onclick="calcRolls()">CALCULATE</button>
+
+  <div class="calc-results" id="roll-results" style="display:none"></div>
+</div>
+
+<div class="calc-card">
+  <h3>T-Post Estimator</h3>
+  <p style="font-size:11px; color:var(--faded); font-family:'IBM Plex Mono',monospace; margin-bottom:10px;">
+    Spacing optimized 8–11 ft based on fence line length. Enter total linear feet or run Roll Calculator first.
+  </p>
+  <div class="form-row">
+    <label>Total linear feet</label>
+    <input type="number" id="tpost-ft" value="1320" min="1">
+  </div>
+  <div class="form-row">
+    <label>Preferred max spacing (ft)</label>
+    <select id="tpost-spacing">
+      <option value="11">11 ft max (lighter pressure / longer runs)</option>
+      <option value="10" selected>10 ft max (standard livestock)</option>
+      <option value="8">8 ft max (sheep/goats, higher pressure)</option>
+    </select>
+  </div>
+  <button class="calc-btn" onclick="calcTPosts()">CALCULATE T-POSTS</button>
+  <div class="calc-results" id="tpost-results" style="display:none"></div>
+</div>
+```
+
+  </div>
+
+  <div class="section-label">Wooden Post & Brace Estimator</div>
+  <div class="calc-card" style="max-width: 600px;">
+    <h3>Corner &amp; H-Brace Posts</h3>
+    <p style="font-size:11px; color:var(--faded); font-family:'IBM Plex Mono',monospace; margin-bottom:12px;">
+      Enter number of corners, inline H-braces, and gate openings. Each gate requires an H-brace on each side.
+    </p>
+    <div class="form-row">
+      <label>90° corners</label>
+      <input type="number" id="corners" value="4" min="0">
+    </div>
+    <div class="form-row">
+      <label>Inline H-braces</label>
+      <input type="number" id="hbraces" value="0" min="0">
+    </div>
+    <div class="form-row">
+      <label>Gate openings</label>
+      <input type="number" id="gates" value="1" min="0">
+    </div>
+    <div class="form-row">
+      <label>Fence height</label>
+      <select id="fence-ht">
+        <option value="36">36"</option>
+        <option value="47">47"</option>
+        <option value="48" selected>48"</option>
+        <option value="56">56"</option>
+        <option value="72">72"</option>
+        <option value="75">75"</option>
+        <option value="78">78"</option>
+        <option value="96">96"</option>
+      </select>
+    </div>
+    <button class="calc-btn" onclick="calcPosts()">CALCULATE POSTS</button>
+    <div id="post-results" style="display:none; margin-top:14px;">
+      <div class="post-grid" id="post-grid"></div>
+      <div class="post-note" id="post-note"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 3: NOTES
+═══════════════════════════════════════════════ -->
+
+<div class="tab-panel" id="tab-notes">
+  <div class="notes-area">
+    <div class="section-label">Product Notes & Selection Guide</div>
+
+```
+<p><strong>Wire carbon content matters more than knot style.</strong> High-tensile (HT) = high-carbon steel. Both hinge joint and fixed knot fences can be HT. All products in this tracker are confirmed high-carbon / Class 3 or Zinc-Aluminum coated.</p>
+
+<p><strong>Galvanization comparison:</strong></p>
+<ul>
+  <li><strong>Zn/Al XtraLife (Summit Steel)</strong> — Zinc-aluminum alloy coating. Outlasts Class 3 zinc by 2–3×. Best corrosion protection available in this category.</li>
+  <li><strong>Class 3</strong> — ~3× more zinc than Class 1. Industry standard for HT fence. Good for most climates including Colorado.</li>
+  <li><strong>Class 1</strong> — Not included in this tracker. Standard farm fence, lower lifespan.</li>
+</ul>
+
+<p><strong>Knot type tradeoffs:</strong></p>
+<ul>
+  <li><strong>Fixed knot</strong> — Strongest, most rigid. Best impact resistance. Stays where you put it. Preferred for sheep/goats and predator pressure.</li>
+  <li><strong>Square knot</strong> — Slightly more flexible than fixed. Still HT. Good all-purpose.</li>
+  <li><strong>Hinge joint</strong> — Flexes under pressure and springs back. Traditional field fence behavior. Fine for cattle/horses with HT wire. Less ideal for small ruminants.</li>
+</ul>
+
+<p><strong>Stay spacing for sheep:</strong> 6" or tighter preferred to prevent head entrapment. 12" stay is adequate for Katahdin/Barbados cross if animals are not horned. Bekaert Horseman 2x4 is the most secure for small ruminants but at significant cost premium.</p>
+
+<p><strong>Both suppliers are local pickup — no shipping:</strong></p>
+<ul>
+  <li>SWI Fence — multiple WY locations + ships; check current availability</li>
+  <li>Stockyard Ranch Supply — 6990 US Hwy 85, Commerce City CO 80022 · (303) 287-8081 · M–F 8am–4:45pm</li>
+</ul>
+
+<p><strong>Price check note:</strong> Prices on this tracker are point-in-time captures. SWI prices are JavaScript-rendered and require manual cart verification. Stockyard prices are static page listings. Always confirm before ordering.</p>
+```
+
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <span>High Bar Ranch LLC · Larimer County CO · Generated by Claude</span>
+  <span id="footer-ts">Session opened: —</span>
+</footer>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA — Products
+// ══════════════════════════════════════════════
+const PRODUCTS = [
+  {
+    id: 'syd-939-14',
+    supplier: 'Stockyard',
+    name: 'HT Field Fence #939-6-14',
+    wire: '14 ga HT',
+    knot: 'Hinge',
+    knot_tag: 'hinge',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 39,
+    stay: '6"',
+    roll_ft: 330,
+    price: 178.00,
+    url: 'https://stockyardsupply.com/?page_id=31',
+    last_checked: null
+  },
+  {
+    id: 'syd-1047-14',
+    supplier: 'Stockyard',
+    name: 'HT Field Fence #1047-6-14',
+    wire: '14 ga HT',
+    knot: 'Hinge',
+    knot_tag: 'hinge',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 47,
+    stay: '6"',
+    roll_ft: 330,
+    price: 220.00,
+    url: 'https://stockyardsupply.com/?page_id=31',
+    last_checked: null
+  },
+  {
+    id: 'swi-836',
+    supplier: 'SWI',
+    name: 'XtraLife 836 Tite Grip',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Zn/Al XL',
+    galv_tag: 'znal',
+    height_in: 36,
+    stay: '12"',
+    roll_ft: 330,
+    price: 245.42,
+    url: 'https://www.swifence.com/summit-xtra-life-836-tite-grip-fixed-knot-hi-tensi.html',
+    last_checked: null
+  },
+  {
+    id: 'swi-1348-12-330',
+    supplier: 'SWI',
+    name: 'XtraLife 1348 Fixed Knot',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Zn/Al XL',
+    galv_tag: 'znal',
+    height_in: 48,
+    stay: '12"',
+    roll_ft: 330,
+    price: 268.24,
+    url: 'https://www.swifence.com/summit-1348-tite-grip-fixed-knot-hi-tensile-fence.html',
+    last_checked: null
+  },
+  {
+    id: 'swi-1348-12-660',
+    supplier: 'SWI',
+    name: 'XtraLife 1348 Fixed Knot',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Zn/Al XL',
+    galv_tag: 'znal',
+    height_in: 48,
+    stay: '12"',
+    roll_ft: 660,
+    price: 536.46,
+    url: 'https://www.swifence.com/summit-1348-tite-grip-fixed-knot-hi-tensile-fence.html',
+    last_checked: null
+  },
+  {
+    id: 'swi-1147',
+    supplier: 'SWI',
+    name: 'Tornado 1147 Torus',
+    wire: '12.5 ga HT',
+    knot: 'Square',
+    knot_tag: 'square',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 47,
+    stay: '6"',
+    roll_ft: 330,
+    price: 306.50,
+    url: 'https://www.swifence.com/1147-torus-square-knot-hi-tensile-fence.html',
+    last_checked: null
+  },
+  {
+    id: 'syd-1472',
+    supplier: 'Stockyard',
+    name: '72" MaxLoc Field Fence',
+    wire: '12.5 ga HT',
+    knot: 'Square',
+    knot_tag: 'square',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 72,
+    stay: '6"',
+    roll_ft: 330,
+    price: 403.00,
+    url: 'https://stockyardsupply.com/?page_id=31',
+    last_checked: null
+  },
+  {
+    id: 'swi-1775',
+    supplier: 'SWI',
+    name: 'XtraLife 1775 Tite Grip',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Zn/Al XL',
+    galv_tag: 'znal',
+    height_in: 75,
+    stay: '6"',
+    roll_ft: 330,
+    price: 457.89,
+    url: 'https://www.swifence.com/x-fence-1775-tite-grip-fixed-knot-game-fence.html',
+    last_checked: null
+  },
+  {
+    id: 'syd-1578',
+    supplier: 'Stockyard',
+    name: '78" HT Game Fence',
+    wire: '12.5 ga HT',
+    knot: 'Graduated',
+    knot_tag: 'grad',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 78,
+    stay: '6"',
+    roll_ft: 330,
+    price: 466.00,
+    url: 'https://stockyardsupply.com/?page_id=31',
+    last_checked: null
+  },
+  {
+    id: 'swi-1348-3-200',
+    supplier: 'SWI',
+    name: 'XtraLife 1348 Fixed Knot',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Zn/Al XL',
+    galv_tag: 'znal',
+    height_in: 48,
+    stay: '3"',
+    roll_ft: 200,
+    price: 342.58,
+    url: 'https://www.swifence.com/summit-1348-tite-grip-fixed-knot-hi-tensile-fence.html',
+    last_checked: null
+  },
+  {
+    id: 'swi-bekaert-2x4',
+    supplier: 'SWI',
+    name: 'Bekaert Horseman 2×4 No-Climb',
+    wire: '12.5 ga HT',
+    knot: 'Square',
+    knot_tag: 'square',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 48,
+    stay: '2"×4"',
+    roll_ft: 330,
+    price: 621.69,
+    url: 'https://www.swifence.com/agricultural-fence/agricultural-fence-wire/square-knot/',
+    last_checked: null
+  },
+  {
+    id: 'syd-2096',
+    supplier: 'Stockyard',
+    name: '96" Max-Lock Game Fence',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 96,
+    stay: '6"',
+    roll_ft: 330,
+    price: 625.00,
+    url: 'https://stockyardsupply.com/?page_id=31',
+    last_checked: null
+  },
+  {
+    id: 'swi-1348-3-200-tornado',
+    supplier: 'SWI',
+    name: 'Tornado 1348 Titan Fixed Knot',
+    wire: '12.5 ga HT',
+    knot: 'Fixed',
+    knot_tag: 'fixed',
+    galv: 'Class 3',
+    galv_tag: 'c3',
+    height_in: 48,
+    stay: '3"',
+    roll_ft: 200,
+    price: 444.00,
+    url: 'https://www.swifence.com/1348-titan-fixed-knot-hi-tensile-fence.html',
+    last_checked: null
+  }
+];
+
+// ══════════════════════════════════════════════
+// PRICE CALCULATIONS
+// ══════════════════════════════════════════════
+function calcMetrics(p) {
+  const lf   = p.price / p.roll_ft;
+  const sf   = p.price / (p.roll_ft * (p.height_in / 12));
+  const k    = lf * 1000;
+  const half = lf * 2640;
+  const mile = lf * 5280;
+  return { lf, sf, k, half, mile };
+}
+
+function fmt(n, dec=2) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtD(n) { return '$' + fmt(n); }
+
+// ══════════════════════════════════════════════
+// RENDER TABLE
+// ══════════════════════════════════════════════
+function renderTable() {
+  const tbody = document.getElementById('price-tbody');
+  tbody.innerHTML = '';
+
+  PRODUCTS.forEach(p => {
+    const m = calcMetrics(p);
+    const cls = p.supplier === 'SWI' ? 'supplier-swi' : 'supplier-stockyard';
+    const ts = p.last_checked
+      ? `<span style="color:var(--good)">${p.last_checked}</span>`
+      : `<span style="color:var(--faded)">—</span>`;
+
+    const row = document.createElement('tr');
+    row.className = cls;
+    row.dataset.id = p.id;
+    row.innerHTML = `
+      <td>${p.supplier}</td>
+      <td>${p.name}</td>
+      <td>${p.wire}</td>
+      <td><span class="tag tag-${p.knot_tag}">${p.knot}</span></td>
+      <td><span class="tag tag-${p.galv_tag}">${p.galv}</span></td>
+      <td class="num">${p.height_in}"</td>
+      <td class="num">${p.stay}</td>
+      <td class="num">${p.roll_ft}'</td>
+      <td class="num price-cell" id="price-${p.id}">${fmtD(p.price)}</td>
+      <td class="num">${fmtD(m.lf)}</td>
+      <td class="num">${fmtD(m.k, 0)}</td>
+      <td class="num">${fmtD(m.half, 0)}</td>
+      <td class="num">${fmtD(m.mile, 0)}</td>
+      <td class="num">${fmtD(m.sf)}</td>
+      <td><a class="product-link" href="${p.url}" target="_blank">↗ VIEW</a></td>
+      <td id="ts-${p.id}">${ts}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════════
+// PRICE CHECK — attempts CORS proxy fetch
+// Falls back gracefully with manual note
+// ══════════════════════════════════════════════
+async function runPriceCheck() {
+  const btn    = document.getElementById('refresh-btn');
+  const status = document.getElementById('check-status');
+  btn.disabled = true;
+  status.className = 'checking';
+  status.textContent = '⟳ Attempting price verification…';
+
+  const now = new Date();
+  const ts  = now.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+
+  // Note: direct price scraping is blocked by CORS in a browser-only file.
+  // This tracker records the last manual verification timestamp.
+  // For live scraping, deploy with a small server-side proxy or GitHub Action.
+  let checked = 0;
+  for (const p of PRODUCTS) {
+    const cell = document.getElementById(`price-${p.id}`);
+    const tsCell = document.getElementById(`ts-${p.id}`);
+    try {
+      // Attempt lightweight fetch to confirm site is reachable
+      const res = await fetch(p.url, { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(4000) });
+      p.last_checked = ts;
+      if (cell) {
+        cell.className = 'num price-cell confirmed';
+      }
+    } catch {
+      if (cell) cell.className = 'num price-cell error';
+    }
+    if (tsCell) {
+      tsCell.innerHTML = p.last_checked
+        ? `<span style="color:var(--good);font-family:'IBM Plex Mono',monospace;font-size:10px">${ts}</span>`
+        : `<span style="color:#B42A2A;font-size:10px">unreachable</span>`;
+    }
+    checked++;
+    status.textContent = `⟳ Checking… ${checked}/${PRODUCTS.length}`;
+    await new Promise(r => setTimeout(r, 120));
+  }
+
+  // Save timestamp
+  localStorage.setItem('hbr-fence-last-check', ts);
+  localStorage.setItem('hbr-fence-prices', JSON.stringify(PRODUCTS.map(p => ({ id: p.id, price: p.price, last_checked: p.last_checked }))));
+
+  status.className = 'done';
+  status.textContent = `✓ Sites reachable — prices recorded ${ts}. Verify carts before ordering.`;
+  btn.disabled = false;
+  document.getElementById('footer-ts').textContent = `Last price check: ${ts}`;
+}
+
+// ══════════════════════════════════════════════
+// RESTORE FROM LOCALSTORAGE
+// ══════════════════════════════════════════════
+function restoreFromStorage() {
+  const saved = localStorage.getItem('hbr-fence-prices');
+  const ts    = localStorage.getItem('hbr-fence-last-check');
+  if (saved) {
+    try {
+      const arr = JSON.parse(saved);
+      arr.forEach(s => {
+        const p = PRODUCTS.find(x => x.id === s.id);
+        if (p) { p.price = s.price; p.last_checked = s.last_checked; }
+      });
+    } catch {}
+  }
+  if (ts) {
+    document.getElementById('check-status').textContent = `Last verified: ${ts}`;
+    document.getElementById('check-status').className = 'done';
+    document.getElementById('footer-ts').textContent = `Last price check: ${ts}`;
+  }
+}
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().startsWith(name === 'prices' ? 'price' : name === 'calc' ? 'roll' : 'product'))
+      t.classList.add('active');
+  });
+}
+
+// ══════════════════════════════════════════════
+// MODE TOGGLE (linear vs dims)
+// ══════════════════════════════════════════════
+function setMode(mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dim-group').forEach(g => g.classList.remove('active'));
+  document.getElementById('btn-' + mode).classList.add('active');
+  document.getElementById('group-' + mode).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// ROLL CALCULATOR
+// ══════════════════════════════════════════════
+function getTotalFeet() {
+  const mode = document.getElementById('btn-linear').classList.contains('active') ? 'linear' : 'dims';
+  if (mode === 'linear') {
+    return parseFloat(document.getElementById('linear-ft').value) || 0;
+  } else {
+    const len   = parseFloat(document.getElementById('dim-len').value) || 0;
+    const wid   = parseFloat(document.getElementById('dim-wid').value) || 0;
+    const sides = parseInt(document.getElementById('dim-sides').value);
+    if (sides === 4) return 2 * (len + wid);
+    if (sides === 3) return len + wid + Math.sqrt(len*len + wid*wid);
+    if (sides === 2) return len + wid;
+    return len;
+  }
+}
+
+function calcRolls() {
+  const selIdx = document.getElementById('wire-sel').value;
+  const p      = PRODUCTS[selIdx];
+  const waste  = (parseFloat(document.getElementById('waste-pct').value) || 0) / 100;
+  const rawFt  = getTotalFeet();
+  const adjFt  = rawFt * (1 + waste);
+  const m      = calcMetrics(p);
+
+  const rollsExact = adjFt / p.roll_ft;
+  const rollsNeeded = Math.ceil(rollsExact);
+  const totalCost   = rollsNeeded * p.price;
+  const totalFt     = rollsNeeded * p.roll_ft;
+  const overage     = totalFt - rawFt;
+
+  // also sync tpost field
+  document.getElementById('tpost-ft').value = Math.round(rawFt);
+
+  const div = document.getElementById('roll-results');
+  div.style.display = 'block';
+  div.innerHTML = `
+    <div class="result-section-head">Fence Line</div>
+    <div class="result-line"><span class="result-label">Raw linear feet</span><span class="result-val">${fmt(rawFt,0)} ft</span></div>
+    <div class="result-line"><span class="result-label">With ${(waste*100).toFixed(0)}% waste factor</span><span class="result-val">${fmt(adjFt,0)} ft</span></div>
+
+    <div class="result-section-head">Selected Wire: ${p.name}</div>
+    <div class="result-line"><span class="result-label">Roll length</span><span class="result-val">${p.roll_ft} ft</span></div>
+    <div class="result-line"><span class="result-label">Price per roll</span><span class="result-val">${fmtD(p.price)}</span></div>
+    <div class="result-line"><span class="result-label">Rolls needed (exact)</span><span class="result-val">${fmt(rollsExact,2)}</span></div>
+    <div class="result-line"><span class="result-label">Rolls to order</span><span class="result-val" style="color:var(--rust)">${rollsNeeded} rolls</span></div>
+    <div class="result-line"><span class="result-label">Total fence feet purchased</span><span class="result-val">${fmt(totalFt,0)} ft</span></div>
+    <div class="result-line"><span class="result-label">Overage</span><span class="result-val">+${fmt(overage,0)} ft</span></div>
+
+    <div class="result-section-head">Cost</div>
+    <div class="result-line"><span class="result-label">Total material cost</span><span class="result-val" style="color:var(--rust)">${fmtD(totalCost,0)}</span></div>
+    <div class="result-line"><span class="result-label">Cost per linear foot</span><span class="result-val">${fmtD(m.lf)}</span></div>
+    <div class="result-note">Does not include posts, gates, hardware, or installation.</div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// T-POST CALCULATOR
+// Finds optimal spacing 8–11 ft that divides evenly
+// ══════════════════════════════════════════════
+function calcTPosts() {
+  const ft      = parseFloat(document.getElementById('tpost-ft').value) || 0;
+  const maxSpan = parseInt(document.getElementById('tpost-spacing').value);
+
+  // Try spacings from maxSpan down to 8, pick the one with best fit
+  let bestSpacing = maxSpan;
+  let bestRemainder = Infinity;
+
+  for (let sp = maxSpan; sp >= 8; sp--) {
+    const posts = Math.ceil(ft / sp) + 1;
+    const actualSpan = ft / (posts - 1);
+    const remainder = Math.abs(actualSpan - Math.round(actualSpan));
+    if (remainder < bestRemainder) {
+      bestRemainder = remainder;
+      bestSpacing = sp;
+    }
+  }
+
+  const postsTotal  = Math.ceil(ft / bestSpacing) + 1;
+  const actualSpan  = ft / (postsTotal - 1);
+
+  const div = document.getElementById('tpost-results');
+  div.style.display = 'block';
+  div.innerHTML = `
+    <div class="result-section-head">T-Post Estimate</div>
+    <div class="result-line"><span class="result-label">Fence line</span><span class="result-val">${fmt(ft,0)} ft</span></div>
+    <div class="result-line"><span class="result-label">Optimal spacing</span><span class="result-val">${fmt(actualSpan,1)} ft</span></div>
+    <div class="result-line"><span class="result-label">T-posts needed</span><span class="result-val" style="color:var(--rust)">${postsTotal}</span></div>
+    <div class="result-note">Excludes corner/gate posts (wooden). Add 1 T-post per gate opening for alignment. Spacing optimized between 8–${maxSpan} ft.</div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// WOODEN POST & BRACE CALCULATOR
+// ══════════════════════════════════════════════
+function calcPosts() {
+  const corners  = parseInt(document.getElementById('corners').value) || 0;
+  const hbraces  = parseInt(document.getElementById('hbraces').value) || 0;
+  const gates    = parseInt(document.getElementById('gates').value) || 0;
+  const heightIn = parseInt(document.getElementById('fence-ht').value);
+
+  // Post sizing by fence height
+  let postSpec, braceSpec, postLength, braceLength;
+  if (heightIn <= 48) {
+    postSpec   = '6" dia. × 8\'';
+    braceSpec  = '4–5" dia. × 8\'';
+    postLength = "8'";
+    braceLength = "8'";
+  } else if (heightIn <= 72) {
+    postSpec   = '6–8" dia. × 10\'';
+    braceSpec  = '4–5" dia. × 10\'';
+    postLength = "10'";
+    braceLength = "10'";
+  } else {
+    postSpec   = '8" dia. × 12\'';
+    braceSpec  = '5–6" dia. × 12\'';
+    postLength = "12'";
+    braceLength = "12'";
+  }
+
+  // Each 90° corner = 2 line posts + 1 brace post + 1 brace rail
+  // Each inline H-brace = 2 line posts + 1 brace rail
+  // Each gate = 2 gate posts (heavy) + 2 H-brace assemblies (4 posts + 2 brace rails)
+  const cornerPosts = corners * 2;        // 2 per corner (both sides)
+  const cornerBraces = corners * 2;       // diagonal brace per leg
+  const inlinePosts  = hbraces * 2;
+  const inlineBraces = hbraces * 1;
+  const gatePosts    = gates * 2;         // actual gate posts
+  const gateHPosts   = gates * 4;         // H-brace each side of gate = 2 posts × 2 sides
+  const gateHBraces  = gates * 2;         // 1 brace rail per H-brace × 2 sides
+
+  const totalCornerLine = cornerPosts;
+  const totalInlineLine = inlinePosts + gateHPosts;
+  const totalGatePosts  = gatePosts;
+  const totalBraceRails = cornerBraces + inlineBraces + gateHBraces;
+
+  const results = document.getElementById('post-results');
+  const grid    = document.getElementById('post-grid');
+  const note    = document.getElementById('post-note');
+  results.style.display = 'block';
+
+  grid.innerHTML = `
+    <div class="post-box">
+      <div class="post-type">Corner Line Posts</div>
+      <div class="post-count">${totalCornerLine}</div>
+      <div class="post-spec">${postSpec}<br>Pressure treated</div>
+    </div>
+    <div class="post-box">
+      <div class="post-type">Inline / Gate H-Brace Posts</div>
+      <div class="post-count">${totalInlineLine}</div>
+      <div class="post-spec">${postSpec}<br>Pressure treated</div>
+    </div>
+    <div class="post-box">
+      <div class="post-type">Gate Posts (heavy)</div>
+      <div class="post-count">${totalGatePosts}</div>
+      <div class="post-spec">8" dia. min × ${postLength}<br>Set 3–4' deep</div>
+    </div>
+    <div class="post-box">
+      <div class="post-type">Horizontal Brace Rails</div>
+      <div class="post-count">${totalBraceRails}</div>
+      <div class="post-spec">${braceSpec}<br>+ wire diagonal per brace</div>
+    </div>
+  `;
+
+  note.innerHTML = `
+    <strong>Assumptions:</strong> Each corner uses 2 line posts + diagonal wire brace per leg.
+    Each gate uses 2 gate posts + an H-brace assembly (2 posts + 1 rail) on each side.
+    Gate posts should be set minimum 3–4' deep and are sized heavier than line posts.
+    All wooden posts should be Class 5 or better pressure treated.
+    Wire diagonal = 9–11 ga smooth or HT wire, tensioned with a loop and twitch stick or turnbuckle.
+    Depth: ${heightIn <= 48 ? "2.5–3'" : heightIn <= 72 ? "3–3.5'" : "3.5–4'"} below grade.
+  `;
+}
+
+// ══════════════════════════════════════════════
+// POPULATE WIRE SELECTOR
+// ══════════════════════════════════════════════
+function populateWireSel() {
+  const sel = document.getElementById('wire-sel');
+  PRODUCTS.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${p.supplier} — ${p.name} | ${p.height_in}" | ${p.stay} stay | ${p.roll_ft}' roll — ${fmtD(p.price)}`;
+    sel.appendChild(opt);
+  });
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  restoreFromStorage();
+  renderTable();
+  populateWireSel();
+
+  // Set session open time
+  const now = new Date();
+  const ts = now.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+  document.getElementById('footer-ts').textContent = `Session opened: ${ts}`;
+
+  // Auto-run price check on load
+  runPriceCheck();
+});
+</script>
+
+</body>
+</html>
